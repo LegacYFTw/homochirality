@@ -436,7 +436,10 @@ def select_optimal_parameters(optimization_results):
 def run_steering_experiment(H, initial_states, target_state, tlist, config):
     """Run steering experiment for single Hamiltonian with gamma support"""
     
-    dt = tlist[1] - tlist[0] if len(tlist) > 1 else 0.1
+    # dt = tlist[1] - tlist[0] if len(tlist) > 1 else 0.1
+    
+    dt = tlist[1] - tlist[0]
+    
     trajectory_data = {}
     
     gamma = config.get('gamma', 0.1)  # Extract gamma from config
