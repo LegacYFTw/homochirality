@@ -2,7 +2,7 @@
 # %%
 # %%
 # ===============================================================
-# QUANTUM STEERING WITH GAMMA-DEPENDENT CONSTRAINT COUPLING
+# QUANTUM STEERING WITH GAMMA-DEPENDENT CONSTRAINT COUPLING - PARALLEL FIXED
 # ===============================================================
 
 import numpy as np
@@ -19,13 +19,11 @@ import time
 import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import psutil
-import cupy as cp_gpu  # GPU arrays
 import torch
 import gc
 
 # TQDM for progress bars
 from tqdm.auto import tqdm, trange
-from tqdm.contrib.concurrent import process_map, thread_map
 
 # Enhanced plotting
 plt.rcParams['figure.figsize'] = [20, 16]
@@ -47,13 +45,6 @@ def setup_gpu():
         print(f"🎯 GPU Memory: {torch.cuda.get_device_properties(gpu_device).total_memory / 1e9:.1f} GB")
     else:
         print("🎯 No GPU detected, using CPU")
-    
-    # Check for CuPy (alternative GPU backend)
-    try:
-        import cupy
-        print("🎯 CuPy available for GPU acceleration")
-    except ImportError:
-        print("🎯 CuPy not available")
     
     return gpu_available, gpu_device
 
@@ -294,92 +285,20 @@ def fidelity_sdp_step(rho_qobj, sigma_qobj, H_qobj, **kwargs):
 # %%
 # %%
 # ===============================================================
-# PARALLEL PROCESSING FUNCTIONS
+# PARALLEL PROCESSING FUNCTIONS - FIXED VERSION
 # ===============================================================
 
-def parallel_sdp_step_wrapper(args):
-    """Wrapper for parallel SDP step execution"""
+# GLOBAL WRAPPER FUNCTIONS (must be at module level for pickling)
+def _sdp_step_wrapper(args):
+    """Wrapper for parallel SDP step execution - MUST be at module level"""
+    rho_qobj, sigma_qobj, H_qobj, config = args
     try:
-        return fidelity_sdp_step(*args)
+        return fidelity_sdp_step(rho_qobj, sigma_qobj, H_qobj, **config)
     except Exception as e:
         return {"status": f"Parallel error: {e}", "sqrtF": 0.0, "fidelity": 0.0, "resulting_state": None}
 
-def run_parallel_sdp_steps(step_args_list, desc="SDP Steps", use_threads=False):
-    """Run multiple SDP steps in parallel"""
-    if use_threads:
-        # Thread-based parallelism (better for I/O bound tasks)
-        results = thread_map(parallel_sdp_step_wrapper, step_args_list, 
-                           desc=desc, max_workers=OPTIMAL_WORKERS)
-    else:
-        # Process-based parallelism (better for CPU-bound tasks)
-        results = process_map(parallel_sdp_step_wrapper, step_args_list,
-                            desc=desc, max_workers=OPTIMAL_WORKERS, chunksize=1)
-    
-    return results
-
-def parallel_gamma_optimization_wrapper(args):
-    """Wrapper for parallel gamma optimization"""
-    gamma, config_dict = args
-    try:
-        # Unpack arguments
-        H = config_dict['H']
-        initial_states = config_dict['initial_states']
-        target_state = config_dict['target_state']
-        tlist = config_dict['tlist']
-        base_config = config_dict['base_config']
-        param_grid = config_dict['param_grid']
-        
-        # Run optimization for this gamma
-        optimization_results, best_params = optimize_constraints_with_gamma(
-            H, initial_states, target_state, tlist, base_config, param_grid, gamma
-        )
-        
-        return gamma, optimization_results, best_params, None
-    except Exception as e:
-        return gamma, None, None, str(e)
-
-# %%
-# ===============================================================
-# CONSTRAINT OPTIMIZATION WITH GAMMA - PARALLEL VERSION
-# ===============================================================
-
-def optimize_constraints_with_gamma_parallel(H, initial_states, target_state, tlist, base_config, param_grid, gamma_values):
-    """Find optimal constraint parameters with gamma dependence - PARALLEL VERSION"""
-    
-    print(f"🧪 Starting PARALLEL constraint optimization for {len(gamma_values)} gamma values...")
-    
-    # Prepare arguments for parallel processing
-    parallel_args = []
-    for gamma in gamma_values:
-        parallel_args.append((gamma, {
-            'H': H,
-            'initial_states': initial_states,
-            'target_state': target_state,
-            'tlist': tlist,
-            'base_config': base_config,
-            'param_grid': param_grid
-        }))
-    
-    # Run in parallel
-    results = process_map(parallel_gamma_optimization_wrapper, parallel_args,
-                         desc="Optimizing gamma values", max_workers=OPTIMAL_WORKERS,
-                         chunksize=1)
-    
-    # Process results
-    optimization_results = {}
-    best_params_by_gamma = {}
-    
-    for gamma, opt_results, best_params, error in tqdm(results, desc="Collecting results"):
-        if error is None:
-            optimization_results[gamma] = opt_results
-            best_params_by_gamma[gamma] = best_params
-        else:
-            print(f"❌ Gamma {gamma} failed: {error}")
-    
-    return optimization_results, best_params_by_gamma
-
-def test_steering_parameters_parallel(args):
-    """Parallel version of test_steering_parameters"""
+def _test_steering_wrapper(args):
+    """Wrapper for testing steering parameters - MUST be at module level"""
     H, initial_states, target_state, tlist, config = args
     try:
         steered_states = [qt.ket2dm(list(initial_states.values())[0])]
@@ -424,6 +343,99 @@ def test_steering_parameters_parallel(args):
         print(f"   Parameter test failed: {e}")
         return None
 
+def _hamiltonian_experiment_wrapper(args):
+    """Wrapper for Hamiltonian experiments - MUST be at module level"""
+    H_name, H, initial_states, target_state, tlist, config = args
+    try:
+        print(f"📊 Analyzing {H_name}...")
+        trajectory_data = run_steering_experiment(H, initial_states, target_state, tlist, config)
+        return H_name, trajectory_data
+    except Exception as e:
+        print(f"❌ Hamiltonian {H_name} failed: {e}")
+        return H_name, None
+
+def _gamma_analysis_wrapper(args):
+    """Wrapper for gamma analysis - MUST be at module level"""
+    gamma, config_dict = args
+    try:
+        test_hamiltonians = config_dict['test_hamiltonians']
+        initial_states = config_dict['initial_states']
+        tlist = config_dict['tlist']
+        base_config = config_dict['base_config']
+        
+        return gamma, _analyze_single_gamma(gamma, test_hamiltonians, initial_states, tlist, base_config)
+    except Exception as e:
+        return gamma, {'error': str(e)}
+
+def run_parallel_sdp_steps(step_args_list, desc="SDP Steps"):
+    """Run multiple SDP steps in parallel"""
+    with ProcessPoolExecutor(max_workers=OPTIMAL_WORKERS) as executor:
+        futures = [executor.submit(_sdp_step_wrapper, args) for args in step_args_list]
+        results = []
+        for future in tqdm(as_completed(futures), total=len(futures), desc=desc):
+            results.append(future.result())
+        return results
+
+def run_parallel_hamiltonian_experiments(ham_args, desc="Hamiltonian experiments"):
+    """Run Hamiltonian experiments in parallel"""
+    with ProcessPoolExecutor(max_workers=OPTIMAL_WORKERS) as executor:
+        futures = [executor.submit(_hamiltonian_experiment_wrapper, args) for args in ham_args]
+        results = []
+        for future in tqdm(as_completed(futures), total=len(futures), desc=desc):
+            results.append(future.result())
+        return results
+
+def run_parallel_gamma_analysis(parallel_args, desc="Gamma analysis"):
+    """Run gamma analysis in parallel"""
+    with ProcessPoolExecutor(max_workers=OPTIMAL_WORKERS) as executor:
+        futures = [executor.submit(_gamma_analysis_wrapper, args) for args in parallel_args]
+        results = []
+        for future in tqdm(as_completed(futures), total=len(futures), desc=desc):
+            results.append(future.result())
+        return results
+
+# %%
+# ===============================================================
+# CONSTRAINT OPTIMIZATION WITH GAMMA - PARALLEL VERSION
+# ===============================================================
+
+def optimize_constraints_with_gamma_parallel(H, initial_states, target_state, tlist, base_config, param_grid, gamma_values):
+    """Find optimal constraint parameters with gamma dependence - PARALLEL VERSION"""
+    
+    print(f"🧪 Starting PARALLEL constraint optimization for {len(gamma_values)} gamma values...")
+    
+    # Prepare arguments for parallel processing
+    parallel_args = []
+    for gamma in gamma_values:
+        parallel_args.append((gamma, {
+            'H': H,
+            'initial_states': initial_states,
+            'target_state': target_state,
+            'tlist': tlist,
+            'base_config': base_config,
+            'param_grid': param_grid
+        }))
+    
+    # Run in parallel
+    results = run_parallel_gamma_analysis(parallel_args, "Optimizing gamma values")
+    
+    # Process results
+    optimization_results = {}
+    best_params_by_gamma = {}
+    
+    for gamma, result in results:
+        if isinstance(result, tuple) and len(result) == 3:
+            opt_results, best_params, error = result
+            if error is None:
+                optimization_results[gamma] = opt_results
+                best_params_by_gamma[gamma] = best_params
+            else:
+                print(f"❌ Gamma {gamma} failed: {error}")
+        else:
+            print(f"❌ Gamma {gamma} returned unexpected result format")
+    
+    return optimization_results, best_params_by_gamma
+
 def optimize_constraints_with_gamma(H, initial_states, target_state, tlist, base_config, param_grid, gamma=0.1):
     """Find optimal constraint parameters with gamma dependence"""
     
@@ -451,9 +463,11 @@ def optimize_constraints_with_gamma(H, initial_states, target_state, tlist, base
             parallel_args.append((H, {test_state_name: test_state}, target_state, tlist, test_config))
         
         # Run tests in parallel
-        trajectory_data_list = process_map(test_steering_parameters_parallel, parallel_args,
-                                         desc=f"Testing {param_name}", max_workers=OPTIMAL_WORKERS,
-                                         chunksize=1)
+        with ProcessPoolExecutor(max_workers=OPTIMAL_WORKERS) as executor:
+            futures = [executor.submit(_test_steering_wrapper, args) for args in parallel_args]
+            trajectory_data_list = []
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Testing {param_name}"):
+                trajectory_data_list.append(future.result())
         
         # Process results
         for param_value, trajectory_data in zip(param_values, trajectory_data_list):
@@ -555,17 +569,12 @@ def run_steering_experiment_parallel(H, initial_states, target_state, tlist, con
         state_names.append(state_name)
     
     # Run steering in parallel for different initial states
-    def steering_wrapper(args):
-        H, states, target, tlist, cfg, name = args
-        return name, run_single_steering_trajectory(H, states, target, tlist, cfg)
-    
-    results = process_map(steering_wrapper, parallel_args,
-                         desc=f"Steering states (γ={gamma})", max_workers=OPTIMAL_WORKERS,
-                         chunksize=1)
+    results = run_parallel_hamiltonian_experiments(parallel_args, f"Steering states (γ={gamma})")
     
     # Collect results
     for state_name, trajectory in results:
-        trajectory_data[state_name] = trajectory
+        if trajectory is not None:
+            trajectory_data[state_name] = trajectory
     
     return trajectory_data
 
@@ -601,8 +610,7 @@ def run_single_steering_trajectory(H, initial_states, target_state, tlist, confi
         if len(sdp_args) >= OPTIMAL_WORKERS or i == len(tlist) - 1:
             # Run batch in parallel
             batch_results = run_parallel_sdp_steps(sdp_args, 
-                                                 desc=f"Time steps {i-len(sdp_args)+1}-{i}",
-                                                 use_threads=False)
+                                                 desc=f"Time steps {i-len(sdp_args)+1}-{i}")
             
             # Process batch results
             for j, result in enumerate(batch_results):
@@ -736,50 +744,7 @@ def update_metrics(metrics, state, target_state, H):
 # GAMMA SWEEP ANALYSIS - PARALLEL VERSION
 # ===============================================================
 
-def analyze_gamma_dependence_parallel(test_hamiltonians, initial_states, tlist, base_config, gamma_values):
-    """Analyze how gamma affects steering performance across different Hamiltonians - PARALLEL VERSION"""
-    
-    print("🎯 ANALYZING GAMMA DEPENDENCE IN PARALLEL")
-    print("="*60)
-    
-    # Prepare arguments for parallel processing
-    parallel_args = []
-    for gamma in gamma_values:
-        parallel_args.append((gamma, {
-            'test_hamiltonians': test_hamiltonians,
-            'initial_states': initial_states,
-            'tlist': tlist,
-            'base_config': base_config
-        }))
-    
-    # Run gamma analysis in parallel
-    def gamma_analysis_wrapper(args):
-        gamma, config_dict = args
-        try:
-            test_hamiltonians = config_dict['test_hamiltonians']
-            initial_states = config_dict['initial_states']
-            tlist = config_dict['tlist']
-            base_config = config_dict['base_config']
-            
-            return gamma, analyze_single_gamma(gamma, test_hamiltonians, initial_states, tlist, base_config)
-        except Exception as e:
-            return gamma, {'error': str(e)}
-    
-    results = process_map(gamma_analysis_wrapper, parallel_args,
-                         desc="Gamma sweep analysis", max_workers=OPTIMAL_WORKERS,
-                         chunksize=1)
-    
-    # Collect results
-    gamma_results = {}
-    for gamma, result in results:
-        if 'error' not in result:
-            gamma_results[gamma] = result
-        else:
-            print(f"❌ Gamma {gamma} analysis failed: {result['error']}")
-    
-    return gamma_results
-
-def analyze_single_gamma(gamma, test_hamiltonians, initial_states, tlist, base_config):
+def _analyze_single_gamma(gamma, test_hamiltonians, initial_states, tlist, base_config):
     """Analyze steering for a single gamma value"""
     # Optimize constraints for this gamma
     test_H = list(test_hamiltonians.values())[0]  # Use first Hamiltonian for optimization
@@ -809,23 +774,46 @@ def analyze_single_gamma(gamma, test_hamiltonians, initial_states, tlist, base_c
         target_state = qt.ket2dm(evecs[1])
         ham_args.append((H_name, H, initial_states, target_state, tlist, optimal_config))
     
-    def ham_experiment_wrapper(args):
-        H_name, H, states, target, tlist, config = args
-        trajectory_data = run_steering_experiment(H, states, target, tlist, config)
-        return H_name, trajectory_data
-    
-    ham_results = process_map(ham_experiment_wrapper, ham_args,
-                            desc=f"Hamiltonians (γ={gamma})", max_workers=OPTIMAL_WORKERS,
-                            chunksize=1)
+    ham_results = run_parallel_hamiltonian_experiments(ham_args, f"Hamiltonians (γ={gamma})")
     
     for H_name, trajectory_data in ham_results:
-        all_results[H_name] = trajectory_data
+        if trajectory_data is not None:
+            all_results[H_name] = trajectory_data
     
     return {
         'optimization_results': optimization_results,
         'best_params': best_params,
         'steering_results': all_results
     }
+
+def analyze_gamma_dependence_parallel(test_hamiltonians, initial_states, tlist, base_config, gamma_values):
+    """Analyze how gamma affects steering performance across different Hamiltonians - PARALLEL VERSION"""
+    
+    print("🎯 ANALYZING GAMMA DEPENDENCE IN PARALLEL")
+    print("="*60)
+    
+    # Prepare arguments for parallel processing
+    parallel_args = []
+    for gamma in gamma_values:
+        parallel_args.append((gamma, {
+            'test_hamiltonians': test_hamiltonians,
+            'initial_states': initial_states,
+            'tlist': tlist,
+            'base_config': base_config
+        }))
+    
+    # Run gamma analysis in parallel
+    results = run_parallel_gamma_analysis(parallel_args, "Gamma sweep analysis")
+    
+    # Collect results
+    gamma_results = {}
+    for gamma, result in results:
+        if 'error' not in result:
+            gamma_results[gamma] = result
+        else:
+            print(f"❌ Gamma {gamma} analysis failed: {result['error']}")
+    
+    return gamma_results
 
 def analyze_gamma_dependence(test_hamiltonians, initial_states, tlist, base_config, gamma_values):
     """Analyze how gamma affects steering performance across different Hamiltonians"""
@@ -876,19 +864,16 @@ def analyze_gamma_dependence(test_hamiltonians, initial_states, tlist, base_conf
     
     return gamma_results
 
-# Rest of your functions (plot_gamma_dependence, main, main_specific_test, etc.)
-# remain the same but with tqdm progress bars added...
-
 # %%
 # ===============================================================
-# MAIN EXPERIMENT WITH GAMMA - PARALLEL VERSION
+# MAIN EXPERIMENT WITH GAMMA - PARALLEL VERSION (FIXED)
 # ===============================================================
 
 def main_parallel():
     """Execute complete quantum steering experiment with gamma dependence - PARALLEL VERSION"""
     
     print("="*80)
-    print("🔬 QUANTUM STEERING WITH GAMMA-DEPENDENT CONSTRAINT COUPLING - PARALLEL")
+    print("🔬 QUANTUM STEERING WITH GAMMA-DEPENDENT CONSTRAINT COUPLING - PARALLEL FIXED")
     print("="*80)
     print(f"🎯 Using {OPTIMAL_WORKERS} parallel workers")
     if GPU_AVAILABLE:
@@ -970,27 +955,17 @@ def main_parallel():
         target_state = qt.ket2dm(evecs[1])
         ham_args.append((H_name, H, initial_states, target_state, tlist, optimal_config))
     
-    # Run in parallel
-    def ham_experiment_wrapper(args):
-        H_name, H, states, target, tlist, config = args
-        print(f"📊 Analyzing {H_name}...")
-        trajectory_data = run_steering_experiment_parallel(H, states, target, tlist, config)
-        return H_name, trajectory_data
-    
-    results = process_map(ham_experiment_wrapper, ham_args,
-                         desc="Hamiltonian experiments", max_workers=OPTIMAL_WORKERS,
-                         chunksize=1)
+    # Run in parallel using the global wrapper function
+    results = run_parallel_hamiltonian_experiments(ham_args, "Hamiltonian experiments")
     
     for H_name, trajectory_data in results:
-        all_results[H_name] = trajectory_data
+        if trajectory_data is not None:
+            all_results[H_name] = trajectory_data
     
     # Option 2: Gamma sweep analysis - PARALLEL VERSION
     print("\n🌊 PARALLEL GAMMA SWEEP ANALYSIS")
     gamma_values = [0.0, 0.01, 0.05, 0.1, 0.2, 0.5]
     gamma_results = analyze_gamma_dependence_parallel(test_hamiltonians, initial_states, tlist, base_config, gamma_values)
-    
-    # Create gamma dependence visualization
-    gamma_fig = plot_gamma_dependence(gamma_results)
     
     # Performance summary
     total_trajectories = sum(len(trajs) for trajs in all_results.values())
@@ -1008,14 +983,52 @@ def main_parallel():
     
     return all_results, gamma_results, optimization_results
 
-# Update your existing main_specific_test to use parallel version
-def main_specific_test_parallel():
-    """Parallel version of main_specific_test"""
-    # Similar structure but using parallel functions...
-    # This would be a parallel version of your specific test
-    pass
+# ===============================================================
+# SIMPLIFIED MAIN FOR TESTING
+# ===============================================================
 
-# Choose which version to run
+def main_simple_parallel():
+    """Simplified parallel version for testing"""
+    print("🚀 RUNNING SIMPLIFIED PARALLEL VERSION")
+    
+    # Simple test setup
+    H = 0.5 * qt.sigmaz() + 0.5 * qt.sigmax()
+    evals, evecs = H.eigenstates(sort='low')
+    target_state = qt.ket2dm(evecs[1])
+    
+    initial_states = {
+        'test_state': (evecs[0] + evecs[1]).unit()
+    }
+    
+    tlist = np.linspace(0, 4, 40)
+    
+    base_config = {
+        'impose_covariance': True,
+        'impose_passivity': True,
+        'eta': 1e-5,
+        'verbose': False,
+        'gamma': 0.1,
+        'relaxation_params': {
+            'tp_tolerance': 1e-8,
+            'covariance_tolerance': 0.01,
+            'passivity_tolerance': 0.01,
+            'state_distance_tolerance': 0.05,
+        }
+    }
+    
+    print("🔬 Running single steering experiment in parallel...")
+    trajectory_data = run_steering_experiment_parallel(H, initial_states, target_state, tlist, base_config)
+    
+    if trajectory_data:
+        final_fid = trajectory_data['test_state']['final_fidelity']
+        initial_fid = trajectory_data['test_state']['metrics']['fidelity'][0]
+        print(f"✅ Success! Fidelity: {initial_fid:.4f} → {final_fid:.4f}")
+    
+    return trajectory_data
+
 if __name__ == "__main__":
-    # Run parallel version for maximum performance
-    all_results, gamma_results, optimization_results = main_parallel()
+    # Use the simple version for testing
+    results = main_simple_parallel()
+    
+    # Once working, you can switch to the full version:
+    # all_results, gamma_results, optimization_results = main_parallel()

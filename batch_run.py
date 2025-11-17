@@ -824,7 +824,7 @@ def main_specific_test():
             'tp_tolerance': 1e-8,
             'covariance_tolerance': 0.01,
             'passivity_tolerance': 0.01,
-            'state_distance_tolerance': 1e-3,
+            'state_distance_tolerance': 1e-2,
         }
     }
     
@@ -1092,7 +1092,7 @@ def create_specific_test_config():
         'algorithm': {
             'impose_covariance': True,
             'impose_passivity': True,
-            'eta': 1e-3,
+            'eta': 0.1,
             'verbose': False,
         },
         
@@ -1101,7 +1101,7 @@ def create_specific_test_config():
             'tp_tolerance': 1e-8,
             'covariance_tolerance_range': np.logspace(-3, -1, 3),
             'passivity_tolerance_range': np.logspace(-3, -1, 3),
-            'state_distance_tolerance': 1e-3,
+            'state_distance_tolerance': 0.05,
         },
         
         # Gamma values to test
@@ -1180,7 +1180,7 @@ def create_specific_test_config(name="default"):
         'algorithm': {
             'impose_covariance': True,
             'impose_passivity': True,
-            'eta': 1e-3,
+            'eta': 0.01,
             'verbose': False,
         },
         
@@ -1189,7 +1189,7 @@ def create_specific_test_config(name="default"):
             'tp_tolerance': 1e-8,
             'covariance_tolerance_range': np.logspace(-3, -1, 3),
             'passivity_tolerance_range': np.logspace(-3, -1, 3),
-            'state_distance_tolerance': 1e-3,
+            'state_distance_tolerance': 0.05,
         },
         
         # Gamma values to test
