@@ -1118,134 +1118,731 @@ def create_specific_test_config():
     return config
 
 # %%
-import itertools
-from pathlib import Path
+# =============================================================================
+# 🚀 COMPLETE QUANTUM STEERING BATCH EXPERIMENT RUN CELL
+# =============================================================================
 
-def create_batch_config_generator():
-    """Create a generator that yields all batch configurations."""
+import numpy as np
+import qutip as qt
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+import datetime
+import json
+import pickle
+import gzip
+from pathlib import Path
+import itertools
+import sys
+import traceback
+
+# Import your existing functions (make sure these are defined)
+# from your_module import track_progress, optimize_constraints_with_gamma, run_steering_experiment
+
+# =============================================================================
+# CONFIGURATION MANAGEMENT
+# =============================================================================
+
+def create_specific_test_config(name="default"):
+    """Create a clean, explicit configuration for the specific test case."""
     
-    # Define parameter sweeps
-    batch_parameters = {
-        'hamiltonians': [
-            {'name': 'H_05sz_05sx', 'coefficients': {'z': 0.5, 'x': 0.5}},
-            {'name': 'H_07sz_03sx', 'coefficients': {'z': 0.7, 'x': 0.3}},
-            {'name': 'H_08sz_02sx', 'coefficients': {'z': 0.8, 'x': 0.2}},
-            {'name': 'H_09sz_01sx', 'coefficients': {'z': 0.9, 'x': 0.1}},
-            {'name': 'H_10sz_00sx', 'coefficients': {'z': 1.0, 'x': 0.0}},
-        ],
-        'initial_states': [
-            {'name': 'ground', 'type': 'eigenbasis_superposition', 'superposition': False},
-            {'name': 'superposition', 'type': 'eigenbasis_superposition', 'superposition': True},
-            {'name': 'zero', 'type': 'computational_basis', 'state': 'zero'},
-        ],
-        'gamma_ranges': [
-            {'name': 'low_gamma', 'values': [0.0, 0.01, 0.05, 0.1]},
-            {'name': 'medium_gamma', 'values': [0.0, 0.1, 0.3, 0.5]},
-            {'name': 'high_gamma', 'values': [0.0, 0.5, 1.0, 2.0]},
-        ],
-        'tolerances': [
-            {'name': 'tight', 'covariance_range': np.logspace(-4, -2, 3), 'passivity_range': np.logspace(-4, -2, 3)},
-            {'name': 'medium', 'covariance_range': np.logspace(-3, -1, 3), 'passivity_range': np.logspace(-3, -1, 3)},
-            {'name': 'loose', 'covariance_range': np.logspace(-2, 0, 3), 'passivity_range': np.logspace(-2, 0, 3)},
-        ]
+    config = {
+        'name': name,
+        'description': f'Quantum steering test - {name}',
+        'timestamp': datetime.datetime.now().isoformat(),
+        
+        # Hamiltonian definition
+        'hamiltonian': {
+            'type': 'sigma_combination',
+            'coefficients': {'z': 0.5, 'x': 0.5},
+            'matrix': None,
+        },
+        
+        # Initial states
+        'initial_states': {
+            'type': 'eigenbasis_superposition',
+            'basis': 'ground',
+            'superposition': False,
+        },
+        
+        # Target state
+        'target_state': {
+            'type': 'excited_eigenstate',
+            'index': 1,
+        },
+        
+        # Time parameters
+        'time': {
+            'duration': 8.0,
+            'points': 1000,
+        },
+        
+        # Algorithm parameters
+        'algorithm': {
+            'impose_covariance': True,
+            'impose_passivity': True,
+            'eta': 1e-3,
+            'verbose': False,
+        },
+        
+        # Relaxation parameters
+        'relaxation': {
+            'tp_tolerance': 1e-8,
+            'covariance_tolerance_range': np.logspace(-3, -1, 3),
+            'passivity_tolerance_range': np.logspace(-3, -1, 3),
+            'state_distance_tolerance': 1e-3,
+        },
+        
+        # Gamma values to test
+        'gamma_values': [0.0, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0],
     }
     
-    # Generate all combinations
-    for ham, state, gamma, tol in itertools.product(
-        batch_parameters['hamiltonians'],
-        batch_parameters['initial_states'],
-        batch_parameters['gamma_ranges'],
-        batch_parameters['tolerances']
-    ):
-        config_name = f"{ham['name']}_{state['name']}_{gamma['name']}_{tol['name']}"
-        
-        config = create_specific_test_config(config_name)
-        
-        # Apply batch parameters
-        config['hamiltonian']['coefficients'] = ham['coefficients']
-        config['initial_states'] = state
-        config['gamma_values'] = gamma['values']
-        config['relaxation']['covariance_tolerance_range'] = tol['covariance_range']
-        config['relaxation']['passivity_tolerance_range'] = tol['passivity_range']
-        
-        yield config
+    return config
 
-def create_targeted_batch_configs():
-    """Create a more focused set of batch configurations."""
+def build_hamiltonian_from_config(config):
+    """Build Hamiltonian from configuration."""
+    ham_config = config['hamiltonian']
     
-    targeted_configs = [
-        # Quick tests for different Hamiltonians
-        {
-            'name': 'quick_scan_H_05sz_05sx',
-            'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
-            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-            'gamma_values': [0.0, 0.1, 0.5],
-            'time': {'duration': 6.0, 'points': 500},
-            'tolerances': {'covariance_range': np.logspace(-3, -1, 2), 
-                          'passivity_range': np.logspace(-3, -1, 2)}
-        },
-        {
-            'name': 'quick_scan_H_08sz_02sx', 
-            'hamiltonian': {'coefficients': {'z': 0.8, 'x': 0.2}},
-            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-            'gamma_values': [0.0, 0.1, 0.5],
-            'time': {'duration': 6.0, 'points': 500},
-            'tolerances': {'covariance_range': np.logspace(-3, -1, 2), 
-                          'passivity_range': np.logspace(-3, -1, 2)}
-        },
-        
-        # Different initial states for best Hamiltonian
-        {
-            'name': 'state_compare_ground',
-            'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
-            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-            'gamma_values': [0.0, 0.05, 0.1, 0.2, 0.5],
-            'tolerances': {'covariance_range': np.logspace(-3, -1, 3), 
-                          'passivity_range': np.logspace(-3, -1, 3)}
-        },
-        {
-            'name': 'state_compare_superposition',
-            'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
-            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': True},
-            'gamma_values': [0.0, 0.05, 0.1, 0.2, 0.5],
-            'tolerances': {'covariance_range': np.logspace(-3, -1, 3), 
-                          'passivity_range': np.logspace(-3, -1, 3)}
-        },
-        
-        # Gamma sensitivity analysis
-        {
-            'name': 'gamma_dense_scan',
-            'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
-            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-            'gamma_values': [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0],
-            'tolerances': {'covariance_range': np.logspace(-3, -1, 3), 
-                          'passivity_range': np.logspace(-3, -1, 3)}
-        },
-    ]
+    if ham_config['type'] == 'sigma_combination':
+        coeffs = ham_config['coefficients']
+        H = coeffs.get('z', 0) * qt.sigmaz() + coeffs.get('x', 0) * qt.sigmax() + coeffs.get('y', 0) * qt.sigmay()
+        ham_config['matrix'] = H  # Store for later use
+        return H
+    else:
+        raise ValueError(f"Unsupported Hamiltonian type: {ham_config['type']}")
+
+def build_initial_states_from_config(config, H, target_state):
+    """Build initial states from configuration."""
+    state_config = config['initial_states']
     
-    for config_dict in targeted_configs:
+    if state_config['type'] == 'eigenbasis_superposition':
+        # Get eigenstates
+        evals, evecs = H.eigenstates(sort='low')
+        ground_ket = evecs[0]
+        excited_ket = evecs[1]
+        
+        if state_config['superposition']:
+            # Create superposition
+            initial_ket = (ground_ket + excited_ket).unit()
+            state_name = '|gnd+exc⟩'
+        else:
+            # Just ground state
+            initial_ket = ground_ket
+            state_name = '|gnd⟩'
+            
+        return {state_name: initial_ket}
+    
+    elif state_config['type'] == 'computational_basis':
+        # Use computational basis states
+        return {
+            '|0⟩': qt.basis(2, 0),
+            '|1⟩': qt.basis(2, 1)
+        }
+    
+    else:
+        raise ValueError(f"Unsupported initial state type: {state_config['type']}")
+
+def build_target_state_from_config(config, H):
+    """Build target state from configuration."""
+    target_config = config['target_state']
+    
+    if target_config['type'] == 'excited_eigenstate':
+        evals, evecs = H.eigenstates(sort='low')
+        target_index = target_config.get('index', 1)  # Default to first excited
+        return qt.ket2dm(evecs[target_index])
+    
+    elif target_config['type'] == 'ground_eigenstate':
+        evals, evecs = H.eigenstates(sort='low')
+        return qt.ket2dm(evecs[0])
+    
+    elif target_config['type'] == 'custom':
+        raise NotImplementedError("Custom target states not implemented yet")
+    
+    else:
+        raise ValueError(f"Unsupported target state type: {target_config['type']}")
+
+def print_config_summary(config, H, initial_states, target_state):
+    """Print a clean summary of the configuration."""
+    print("="*80)
+    print("⚙️  CONFIGURATION SUMMARY")
+    print("="*80)
+    
+    # Hamiltonian info
+    evals, evecs = H.eigenstates(sort='low')
+    print(f"🔬 HAMILTONIAN: {config['hamiltonian']['type']}")
+    print(f"   Matrix: H = {config['hamiltonian']['coefficients']}")
+    print(f"   Eigenvalues: {[float(e) for e in evals]}")
+    
+    # Initial states info
+    print(f"\n🎯 INITIAL STATES: {config['initial_states']['type']}")
+    for name, state in initial_states.items():
+        fid = qt.fidelity(qt.ket2dm(state), target_state)
+        print(f"   {name}: Fidelity with target = {fid:.4f}")
+    
+    # Target state info
+    target_energy = float(np.real(qt.expect(H, target_state)))
+    print(f"\n🎯 TARGET STATE: {config['target_state']['type']}")
+    print(f"   Energy: {target_energy:.4f}")
+    
+    # Algorithm parameters
+    print(f"\n⚡ ALGORITHM PARAMETERS:")
+    alg = config['algorithm']
+    print(f"   Covariance: {alg['impose_covariance']}, Passivity: {alg['impose_passivity']}")
+    print(f"   Eta: {alg['eta']}, Verbose: {alg['verbose']}")
+    
+    # Gamma values
+    print(f"\n📊 GAMMA SWEEP: {len(config['gamma_values'])} values")
+    print(f"   Values: {config['gamma_values']}")
+    
+    print("="*80)
+
+# =============================================================================
+# FILE MANAGEMENT
+# =============================================================================
+
+def create_results_directory(config_name=None):
+    """Create a timestamped results directory with config-based naming."""
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    if config_name:
+        safe_name = "".join(c for c in config_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_name = safe_name.replace(' ', '_')
+        dir_name = f"{timestamp}_{safe_name}"
+    else:
+        dir_name = f"{timestamp}_quantum_steering"
+    
+    results_dir = Path("results") / dir_name
+    results_dir.mkdir(parents=True, exist_ok=True)
+    
+    return results_dir
+
+def save_configuration(config, results_dir):
+    """Save configuration as JSON file."""
+    config_file = results_dir / "configuration.json"
+    
+    # Convert numpy arrays to lists for JSON serialization
+    def default_serializer(obj):
+        if hasattr(obj, 'tolist'):
+            return obj.tolist()
+        elif isinstance(obj, (np.integer, np.floating)):
+            return float(obj)
+        else:
+            return str(obj)
+    
+    config_serializable = json.loads(json.dumps(config, default=default_serializer))
+    
+    with open(config_file, 'w') as f:
+        json.dump(config_serializable, f, indent=2)
+    
+    print(f"💾 Configuration saved to: {config_file}")
+
+def save_results(gamma_results, config, results_dir):
+    """Save numerical results to files."""
+    summary_file = results_dir / "results_summary.json"
+    
+    summary = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'config_name': config.get('name', 'unnamed'),
+        'gamma_results': {}
+    }
+    
+    for gamma, result in gamma_results.items():
+        summary['gamma_results'][float(gamma)] = {
+            'final_fidelity': float(result['final_fidelity']),
+            'improvement': float(result['improvement']),
+            'best_params': {k: float(v) for k, v in result['best_params'].items()}
+        }
+    
+    with open(summary_file, 'w') as f:
+        json.dump(summary, f, indent=2)
+    
+    print(f"💾 Results summary saved to: {summary_file}")
+
+# =============================================================================
+# PICKLE SAVING FUNCTIONS
+# =============================================================================
+
+# def save_results_pickle(gamma_results, config, results_dir, filename="results.pkl"):
+#     """Save complete results as a pickle file."""
+#     pickle_data = {
+#         'timestamp': datetime.datetime.now().isoformat(),
+#         'config': config,
+#         'gamma_results': gamma_results,
+#         'metadata': {
+#             'num_gamma_values': len(gamma_results),
+#             'hamiltonian': config['hamiltonian']['coefficients'],
+#             'initial_state_type': config['initial_states']['type'],
+#             'target_state_type': config['target_state']['type']
+#         }
+#     }
+    
+#     pickle_path = results_dir / filename
+#     with open(pickle_path, 'wb') as f:
+#         pickle.dump(pickle_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+#     print(f"💾 Pickle results saved to: {pickle_path}")
+#     return pickle_path
+
+# def save_results_pickle_compressed(gamma_results, config, results_dir, filename="results.pkl.gz"):
+#     """Save complete results as a compressed pickle file."""
+#     pickle_data = {
+#         'timestamp': datetime.datetime.now().isoformat(),
+#         'config': config,
+#         'gamma_results': gamma_results,
+#         'metadata': {
+#             'num_gamma_values': len(gamma_results),
+#             'hamiltonian': config['hamiltonian']['coefficients'],
+#             'initial_state_type': config['initial_states']['type'],
+#             'target_state_type': config['target_state']['type']
+#         }
+#     }
+    
+#     pickle_path = results_dir / filename
+#     with gzip.open(pickle_path, 'wb') as f:
+#         pickle.dump(pickle_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+#     print(f"💾 Compressed pickle results saved to: {pickle_path}")
+#     return pickle_path
+
+def save_detailed_pickle(gamma_results, config, results_dir, filename="detailed_results.pkl"):
+    """Save extremely detailed results including trajectory data."""
+    
+    detailed_data = {}
+    for gamma, result in gamma_results.items():
+        detailed_data[gamma] = {
+            'final_fidelity': result['final_fidelity'],
+            'improvement': result['improvement'],
+            'best_params': result['best_params'],
+            'trajectory_metrics': {}
+        }
+        
+        # Extract metrics from trajectory data
+        state_name = list(result['trajectory_data'].keys())[0]
+        trajectory = result['trajectory_data'][state_name]
+        
+        detailed_data[gamma]['trajectory_metrics'] = {
+            'time': trajectory['metrics']['time'],
+            'fidelity': [float(f) for f in trajectory['metrics']['fidelity']],
+            'energy': [float(e) for e in trajectory['metrics']['energy']],
+            'purity': [float(p) for p in trajectory['metrics']['purity']],
+            'coherence': [float(c) for c in trajectory['metrics']['coherence']],
+            'bloch_coords': [[float(x) for x in coord] for coord in trajectory['metrics']['bloch_coords']],
+            'state_name': state_name
+        }
+    
+    pickle_data = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'config': config,
+        'detailed_results': detailed_data,
+        'metadata': {
+            'num_gamma_values': len(gamma_results),
+            'hamiltonian': config['hamiltonian']['coefficients'],
+            'initial_state_type': config['initial_states']['type'],
+            'target_state_type': config['target_state']['type'],
+            'gamma_values': [float(g) for g in gamma_results.keys()]
+        }
+    }
+    
+    pickle_path = results_dir / filename
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(pickle_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    print(f"💾 Detailed pickle results saved to: {pickle_path}")
+    return pickle_path
+
+# =============================================================================
+# PLOTTING FUNCTIONS
+# =============================================================================
+
+def plot_and_save_specific_gamma_results(gamma_results, H, target_state, config, results_dir):
+    """Plot detailed results and save figures with config-based naming."""
+    
+    # Auto-detect state name
+    first_gamma = sorted(gamma_results.keys())[0]
+    trajectory_data_example = gamma_results[first_gamma]['trajectory_data']
+    state_name = list(trajectory_data_example.keys())[0]
+    
+    gamma_values = sorted(gamma_results.keys())
+    config_name = config.get('name', 'unnamed_config')
+    
+    # Create figures
+    fig = plt.figure(figsize=(20, 16))
+    gs = GridSpec(3, 3, figure=fig)
+    colors = plt.cm.viridis(np.linspace(0, 1, len(gamma_values)))
+
+    # Plot 1: Final Fidelity vs Gamma
+    ax1 = fig.add_subplot(gs[0, 0])
+    final_fidelities = [gamma_results[g]['final_fidelity'] for g in gamma_values]
+    ax1.plot(gamma_values, final_fidelities, 'o-', linewidth=3, markersize=8)
+    ax1.set_title(f'Final Fidelity vs Gamma\n{config_name}', fontsize=14, fontweight='bold')
+    ax1.set_xlabel('Gamma (γ)')
+    ax1.set_ylabel('Final Fidelity')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_ylim(0, 1.1)
+
+    # Plot 2: Improvement vs Gamma
+    ax2 = fig.add_subplot(gs[0, 1])
+    improvements = [gamma_results[g]['improvement'] for g in gamma_values]
+    ax2.plot(gamma_values, improvements, 's-', linewidth=3, markersize=8)
+    ax2.axhline(y=0, color='red', linestyle='--', alpha=0.5)
+    ax2.set_title(f'Fidelity Improvement vs Gamma\n{config_name}', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Gamma (γ)')
+    ax2.set_ylabel('Improvement')
+    ax2.grid(True, alpha=0.3)
+
+    # Plot 3: Fidelity evolution
+    ax3 = fig.add_subplot(gs[0, 2])
+    for idx, gamma in enumerate(gamma_values):
+        d = gamma_results[gamma]['trajectory_data'][state_name]
+        ax3.plot(d['metrics']['time'], d['metrics']['fidelity'],
+                 linewidth=2, alpha=0.8, color=colors[idx], label=f'γ={gamma}')
+    ax3.set_title(f'Fidelity Evolution\n{config_name}')
+    ax3.set_xlabel('Time')
+    ax3.set_ylabel('Fidelity')
+    ax3.grid(True, alpha=0.3)
+    ax3.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Plot 4: Energy evolution
+    ax4 = fig.add_subplot(gs[1, 0])
+    for idx, gamma in enumerate(gamma_values):
+        d = gamma_results[gamma]['trajectory_data'][state_name]
+        ax4.plot(d['metrics']['time'], d['metrics']['energy'],
+                 linewidth=2, alpha=0.8, color=colors[idx], label=f'γ={gamma}')
+    target_energy = float(np.real(qt.expect(H, target_state)))
+    ax4.axhline(y=target_energy, linestyle='--', color='black', linewidth=2,
+                label='Target Energy')
+    ax4.set_title(f'Energy Evolution\n{config_name}')
+    ax4.set_xlabel('Time')
+    ax4.set_ylabel('Energy')
+    ax4.legend()
+    ax4.grid(True, alpha=0.3)
+
+    # Plot 5: Purity evolution
+    ax5 = fig.add_subplot(gs[1, 1])
+    for idx, gamma in enumerate(gamma_values):
+        d = gamma_results[gamma]['trajectory_data'][state_name]
+        ax5.plot(d['metrics']['time'], d['metrics']['purity'],
+                 linewidth=2, alpha=0.8, color=colors[idx], label=f'γ={gamma}')
+    ax5.set_title(f'Purity Evolution\n{config_name}')
+    ax5.set_xlabel('Time')
+    ax5.set_ylabel('Purity')
+    ax5.grid(True, alpha=0.3)
+    ax5.set_ylim(0, 1)
+
+    # Plot 6: Coherence evolution
+    ax6 = fig.add_subplot(gs[1, 2])
+    for idx, gamma in enumerate(gamma_values):
+        d = gamma_results[gamma]['trajectory_data'][state_name]
+        ax6.plot(d['metrics']['time'], d['metrics']['coherence'],
+                 linewidth=2, alpha=0.8, color=colors[idx], label=f'γ={gamma}')
+    ax6.set_title(f'Coherence Evolution\n{config_name}')
+    ax6.set_xlabel('Time')
+    ax6.set_ylabel('Coherence')
+    ax6.grid(True, alpha=0.3)
+
+    # Plot 7: Bloch sphere trajectories
+    ax7 = fig.add_subplot(gs[2, :], projection='3d')
+    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    ax7.plot_wireframe(np.sin(v)*np.cos(u),
+                       np.sin(v)*np.sin(u),
+                       np.cos(v),
+                       color="gray", alpha=0.2)
+
+    for idx, gamma in enumerate(gamma_values[:4]):
+        d = gamma_results[gamma]['trajectory_data'][state_name]
+        coords = np.array(d['metrics']['bloch_coords'])
+        ax7.plot(coords[:,0], coords[:,1], coords[:,2],
+                 linewidth=3, alpha=0.8, color=colors[idx], label=f'γ={gamma}')
+
+    # Plot target marker
+    tx = float(np.real(qt.expect(qt.sigmax(), target_state)))
+    ty = float(np.real(qt.expect(qt.sigmay(), target_state)))
+    tz = float(np.real(qt.expect(qt.sigmaz(), target_state)))
+    ax7.scatter([tx],[ty],[tz],s=200,color='red',marker='*',edgecolors='black')
+
+    ax7.set_title(f'Bloch Sphere Trajectories\n{config_name}')
+
+    plt.tight_layout()
+    
+    # Save the main figure
+    main_figure_path = results_dir / f"comprehensive_results_{config_name}.png"
+    plt.savefig(main_figure_path, dpi=300, bbox_inches='tight')
+    print(f"💾 Main figure saved to: {main_figure_path}")
+    plt.show()
+
+# =============================================================================
+# MAIN EXPERIMENT FUNCTION
+# =============================================================================
+
+def main_specific_test_sanitized(user_config=None):
+    """Sanitized test case with automatic saving of results and figures."""
+    
+    # Use provided config or create default
+    if user_config is None:
+        config = create_specific_test_config("default_H_05sz_05sx")
+    else:
+        config = user_config
+    
+    # Create results directory
+    results_dir = create_results_directory(config['name'])
+    print(f"📁 Results will be saved to: {results_dir}")
+    
+    # Build components from config
+    H = build_hamiltonian_from_config(config)
+    target_state = build_target_state_from_config(config, H)
+    initial_states = build_initial_states_from_config(config, H, target_state)
+    
+    # Print configuration summary
+    print_config_summary(config, H, initial_states, target_state)
+    
+    # Save configuration
+    save_configuration(config, results_dir)
+    
+    # Time grid from config
+    tlist = np.linspace(0, config['time']['duration'], config['time']['points'])
+    
+    # Base configuration for the algorithm
+    base_config = {
+        'impose_covariance': config['algorithm']['impose_covariance'],
+        'impose_passivity': config['algorithm']['impose_passivity'],
+        'eta': config['algorithm']['eta'],
+        'verbose': config['algorithm']['verbose'],
+        'relaxation_params': {
+            'tp_tolerance': config['relaxation']['tp_tolerance'],
+            'covariance_tolerance': 0.01,
+            'passivity_tolerance': 0.01,
+            'state_distance_tolerance': config['relaxation']['state_distance_tolerance'],
+        }
+    }
+    
+    # Gamma values from config
+    gamma_values = config['gamma_values']
+    
+    print(f"\n🎯 TESTING {len(gamma_values)} GAMMA VALUES")
+    print("="*60)
+    
+    # Store results for each gamma
+    gamma_results = {}
+    
+    for gamma in track_progress(gamma_values, "Gamma sweep"):
+        # Optimize constraints for this specific gamma
+        param_grid = {
+            'passivity_tolerance': config['relaxation']['passivity_tolerance_range'],
+            'covariance_tolerance': config['relaxation']['covariance_tolerance_range'],
+        }
+
+        optimization_results, best_params = optimize_constraints_with_gamma(
+            H, initial_states, target_state, tlist[:10], base_config, param_grid, gamma
+        )
+
+        # Use optimized parameters
+        config_with_gamma = base_config.copy()  
+        config_with_gamma['relaxation_params'].update(best_params)
+        config_with_gamma['gamma'] = gamma
+        
+        print(f"\n🔍 Testing γ = {gamma:.2f}")
+        
+        # Run steering experiment
+        trajectory_data = run_steering_experiment(
+            H, initial_states, target_state, tlist, config_with_gamma
+        )
+        
+        # Use the correct state name
+        state_name = list(initial_states.keys())[0]
+        
+        # Store results
+        gamma_results[gamma] = {
+            'trajectory_data': trajectory_data,
+            'final_fidelity': trajectory_data[state_name]['final_fidelity'],
+            'improvement': trajectory_data[state_name]['improvement'],
+            'best_params': best_params
+        }
+        
+        # Print immediate results
+        data = trajectory_data[state_name]
+        final_fid = data['final_fidelity']
+        initial_fid = data['metrics']['fidelity'][0]
+        
+        print(f"   Fidelity: {initial_fid:.4f} → {final_fid:.4f} "
+              f"(Δ = {final_fid - initial_fid:+.4f})")
+        print(f"   Optimal params: {best_params}")
+    
+    # Save results in multiple formats
+    save_results(gamma_results, config, results_dir)
+    # save_results_pickle(gamma_results, config, results_dir)
+    # save_results_pickle_compressed(gamma_results, config, results_dir)
+    save_detailed_pickle(gamma_results, config, results_dir)
+    
+    # Create plots
+    plot_and_save_specific_gamma_results(gamma_results, H, target_state, config, results_dir)
+    
+    print(f"\n✅ All results saved to: {results_dir}")
+    
+    return gamma_results, config, results_dir
+
+# =============================================================================
+# BATCH EXPERIMENT SYSTEM
+# =============================================================================
+
+# Define quick test batch configurations
+QUICK_TEST_BATCH = [
+    {
+        'name': 'quick_H_05sz_05sx_ground',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
+        'gamma_values': [0.0, 0.1, 0.5],
+        'time': {'duration': 4.0, 'points': 200},
+    },
+    {
+        'name': 'quick_H_05sz_05sx_superposition',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': True},
+        'gamma_values': [0.0, 0.1, 0.5],
+        'time': {'duration': 4.0, 'points': 200},
+    }
+]
+
+def create_custom_batch_from_list(config_list):
+    """Create a batch from a custom list of configuration dictionaries."""
+    for config_dict in config_list:
         config = create_specific_test_config(config_dict['name'])
         
-        # Update with targeted parameters
-        if 'hamiltonian' in config_dict:
-            config['hamiltonian']['coefficients'].update(config_dict['hamiltonian']['coefficients'])
-        if 'initial_states' in config_dict:
-            config['initial_states'].update(config_dict['initial_states'])
-        if 'gamma_values' in config_dict:
-            config['gamma_values'] = config_dict['gamma_values']
-        if 'time' in config_dict:
-            config['time'].update(config_dict['time'])
-        if 'tolerances' in config_dict:
-            config['relaxation']['covariance_tolerance_range'] = config_dict['tolerances']['covariance_range']
-            config['relaxation']['passivity_tolerance_range'] = config_dict['tolerances']['passivity_range']
+        # Update with provided parameters
+        for key, value in config_dict.items():
+            if key == 'name':
+                continue
+            elif key in config:
+                if isinstance(value, dict) and isinstance(config[key], dict):
+                    config[key].update(value)
+                else:
+                    config[key] = value
         
         yield config
 
-def run_batch_experiment(batch_name="quantum_batch", config_generator=None, max_configs=None):
-    """Run a batch of experiments automatically."""
+def save_batch_summary(batch_results, batch_dir):
+    """Save a comprehensive summary of the batch experiment."""
+    summary = {
+        'batch_timestamp': datetime.datetime.now().isoformat(),
+        'total_configs': len(batch_results),
+        'successful_configs': len([r for r in batch_results.values() if r['status'] == 'SUCCESS']),
+        'failed_configs': len([r for r in batch_results.values() if r['status'] == 'FAILED']),
+        'config_summaries': {}
+    }
+    
+    for config_name, result in batch_results.items():
+        if result['status'] == 'SUCCESS':
+            best_fidelity = max(result['results'][g]['final_fidelity'] for g in result['results'])
+            best_gamma = max(result['results'].items(), key=lambda x: x[1]['final_fidelity'])[0]
+            
+            summary['config_summaries'][config_name] = {
+                'status': 'SUCCESS',
+                'best_fidelity': float(best_fidelity),
+                'best_gamma': float(best_gamma),
+                'results_dir': str(result['results_dir']),
+                'hamiltonian': result['config']['hamiltonian']['coefficients'],
+                'initial_state': result['config']['initial_states']['type'],
+                'gamma_values': [float(g) for g in result['config']['gamma_values']]
+            }
+        else:
+            summary['config_summaries'][config_name] = {
+                'status': 'FAILED',
+                'error': result.get('error', 'Unknown error')
+            }
+    
+    # Save summary file
+    summary_file = batch_dir / "batch_summary.json"
+    with open(summary_file, 'w') as f:
+        json.dump(summary, f, indent=2)
+    
+    print(f"💾 Batch summary saved to: {summary_file}")
+
+def save_batch_pickle(batch_results, batch_dir, filename="batch_results.pkl"):
+    """Save complete batch results as a pickle file."""
+    batch_pickle_data = {
+        'batch_timestamp': datetime.datetime.now().isoformat(),
+        'batch_results': batch_results,
+        'metadata': {
+            'total_configs': len(batch_results),
+            'successful_configs': len([r for r in batch_results.values() if r['status'] == 'SUCCESS']),
+            'failed_configs': len([r for r in batch_results.values() if r['status'] == 'FAILED']),
+            'config_names': list(batch_results.keys())
+        }
+    }
+    
+    pickle_path = batch_dir / filename
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(batch_pickle_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    print(f"💾 Batch pickle saved to: {pickle_path}")
+    return pickle_path
+
+def save_complete_batch_archive(batch_results, batch_dir):
+    """Save a complete archive of the entire batch including all individual results."""
+    batch_archive = {
+        'batch_timestamp': datetime.datetime.now().isoformat(),
+        'batch_metadata': {
+            'total_configs': len(batch_results),
+            'successful_configs': len([r for r in batch_results.values() if r['status'] == 'SUCCESS']),
+            'failed_configs': len([r for r in batch_results.values() if r['status'] == 'FAILED']),
+        },
+        'configurations': {}
+    }
+    
+    # Add each configuration's results
+    for config_name, result in batch_results.items():
+        if result['status'] == 'SUCCESS':
+            batch_archive['configurations'][config_name] = {
+                'config': result['config'],
+                'gamma_results': result['results'],
+                'best_fidelity': max(result['results'][g]['final_fidelity'] for g in result['results']),
+                'best_gamma': max(result['results'].items(), key=lambda x: x[1]['final_fidelity'])[0],
+                'results_dir': str(result['results_dir'])
+            }
+        else:
+            batch_archive['configurations'][config_name] = {
+                'status': 'FAILED',
+                'error': result.get('error', 'Unknown error'),
+                'config': result['config']
+            }
+    
+    # Save the complete archive
+    archive_path = batch_dir / "complete_batch_archive.pkl"
+    with open(archive_path, 'wb') as f:
+        pickle.dump(batch_archive, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    print(f"💾 Complete batch archive saved to: {archive_path}")
+    return archive_path
+
+def print_batch_report(batch_results, completed_configs, failed_configs, batch_dir):
+    """Print a comprehensive batch execution report."""
+    print(f"\n{'='*80}")
+    print("📊 BATCH EXECUTION REPORT")
+    print(f"{'='*80}")
+    print(f"📁 Batch directory: {batch_dir}")
+    print(f"📋 Total configurations: {len(batch_results)}")
+    print(f"✅ Successful: {len(completed_configs)}")
+    print(f"❌ Failed: {len(failed_configs)}")
+    
+    if completed_configs:
+        print(f"\n🏆 TOP PERFORMING CONFIGURATIONS:")
+        successful_results = {k: v for k, v in batch_results.items() if v['status'] == 'SUCCESS'}
+        
+        # Sort by best fidelity
+        sorted_configs = sorted(
+            successful_results.items(),
+            key=lambda x: max(x[1]['results'][g]['final_fidelity'] for g in x[1]['results']),
+            reverse=True
+        )[:5]
+        
+        for i, (config_name, result) in enumerate(sorted_configs, 1):
+            best_fidelity = max(result['results'][g]['final_fidelity'] for g in result['results'])
+            best_gamma = max(result['results'].items(), key=lambda x: x[1]['final_fidelity'])[0]
+            print(f"  {i}. {config_name}: {best_fidelity:.4f} (γ={best_gamma})")
+
+def run_batch_experiment(batch_name="quantum_batch", config_generator=None, max_configs=None, save_pickles=True):
+    """Run a batch of experiments automatically with pickle saving."""
     
     if config_generator is None:
-        config_generator = create_targeted_batch_configs()
+        config_generator = create_custom_batch_from_list(QUICK_TEST_BATCH)
     
     # Create batch directory
     batch_dir = Path("batch_results") / f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{batch_name}"
@@ -1287,6 +1884,7 @@ def run_batch_experiment(batch_name="quantum_batch", config_generator=None, max_
             
         except Exception as e:
             print(f"❌ {config['name']}: FAILED - {str(e)}")
+            print(f"🔍 Error details: {traceback.format_exc()}")
             batch_results[config['name']] = {
                 'results': None,
                 'config': config,
@@ -1296,187 +1894,72 @@ def run_batch_experiment(batch_name="quantum_batch", config_generator=None, max_
             }
             failed_configs.append(config['name'])
     
-    # Save batch summary
+    # Save batch summaries
     save_batch_summary(batch_results, batch_dir)
+    
+    if save_pickles:
+        save_batch_pickle(batch_results, batch_dir)
+        save_complete_batch_archive(batch_results, batch_dir)
     
     # Print final report
     print_batch_report(batch_results, completed_configs, failed_configs, batch_dir)
     
     return batch_results, batch_dir
 
-def save_batch_summary(batch_results, batch_dir):
-    """Save a comprehensive summary of the batch experiment."""
-    
-    summary = {
-        'batch_timestamp': datetime.datetime.now().isoformat(),
-        'total_configs': len(batch_results),
-        'successful_configs': len([r for r in batch_results.values() if r['status'] == 'SUCCESS']),
-        'failed_configs': len([r for r in batch_results.values() if r['status'] == 'FAILED']),
-        'config_summaries': {}
-    }
-    
-    for config_name, result in batch_results.items():
-        if result['status'] == 'SUCCESS':
-            best_fidelity = max(result['results'][g]['final_fidelity'] for g in result['results'])
-            best_gamma = max(result['results'].items(), key=lambda x: x[1]['final_fidelity'])[0]
-            
-            summary['config_summaries'][config_name] = {
-                'status': 'SUCCESS',
-                'best_fidelity': float(best_fidelity),
-                'best_gamma': float(best_gamma),
-                'results_dir': str(result['results_dir']),
-                'hamiltonian': result['config']['hamiltonian']['coefficients'],
-                'initial_state': result['config']['initial_states']['type'],
-                'gamma_values': [float(g) for g in result['config']['gamma_values']]
-            }
-        else:
-            summary['config_summaries'][config_name] = {
-                'status': 'FAILED',
-                'error': result.get('error', 'Unknown error')
-            }
-    
-    # Save summary file
-    summary_file = batch_dir / "batch_summary.json"
-    with open(summary_file, 'w') as f:
-        json.dump(summary, f, indent=2)
-    
-    print(f"💾 Batch summary saved to: {summary_file}")
+# %%
 
-def print_batch_report(batch_results, completed_configs, failed_configs, batch_dir):
-    """Print a comprehensive batch execution report."""
-    
-    print(f"\n{'='*80}")
-    print("📊 BATCH EXECUTION REPORT")
-    print(f"{'='*80}")
-    print(f"📁 Batch directory: {batch_dir}")
-    print(f"📋 Total configurations: {len(batch_results)}")
-    print(f"✅ Successful: {len(completed_configs)}")
-    print(f"❌ Failed: {len(failed_configs)}")
-    
-    if completed_configs:
-        print(f"\n🏆 TOP PERFORMING CONFIGURATIONS:")
-        successful_results = {k: v for k, v in batch_results.items() if v['status'] == 'SUCCESS'}
-        
-        # Sort by best fidelity
-        sorted_configs = sorted(
-            successful_results.items(),
-            key=lambda x: max(x[1]['results'][g]['final_fidelity'] for g in x[1]['results']),
-            reverse=True
-        )[:5]  # Top 5
-        
-        for i, (config_name, result) in enumerate(sorted_configs, 1):
-            best_fidelity = max(result['results'][g]['final_fidelity'] for g in result['results'])
-            best_gamma = max(result['results'].items(), key=lambda x: x[1]['final_fidelity'])[0]
-            print(f"  {i}. {config_name}: {best_fidelity:.4f} (γ={best_gamma})")
-    
-    if failed_configs:
-        print(f"\n⚠️ FAILED CONFIGURATIONS:")
-        for config_name in failed_configs:
-            error = batch_results[config_name].get('error', 'Unknown error')
-            print(f"  ❌ {config_name}: {error}")
 
-def create_custom_batch_from_list(config_list):
-    """Create a batch from a custom list of configuration dictionaries."""
-    
-    for config_dict in config_list:
-        config = create_specific_test_config(config_dict['name'])
-        
-        # Update with provided parameters
-        for key, value in config_dict.items():
-            if key == 'name':
-                continue
-            elif key in config:
-                if isinstance(value, dict) and isinstance(config[key], dict):
-                    config[key].update(value)
-                else:
-                    config[key] = value
-        
-        yield config
+# =============================================================================
+# 🎯 EXECUTION CELLS - CHOOSE ONE TO RUN
+# =============================================================================
 
-# Example batch configurations
-QUICK_TEST_BATCH = [
-    {
-        'name': 'quick_H_05sz_05sx_ground',
-        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
-        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-        'gamma_values': [0.0, 0.1, 0.5],
-        'time': {'duration': 4.0, 'points': 200},
-    },
-    {
-        'name': 'quick_H_05sz_05sx_superposition',
-        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
-        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': True},
-        'gamma_values': [0.0, 0.1, 0.5],
-        'time': {'duration': 4.0, 'points': 200},
-    }
-]
-
-HAMILTONIAN_SWEEP_BATCH = [
-    {
-        'name': f'H_{int(100*z)}sz_{int(100*x)}sx',
-        'hamiltonian': {'coefficients': {'z': z, 'x': x}},
-        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-        'gamma_values': [0.0, 0.05, 0.1, 0.2, 0.5],
-    }
-    for z, x in [(0.3, 0.7), (0.5, 0.5), (0.7, 0.3), (0.9, 0.1)]
-]
-
-# Usage examples:
-def run_different_batch_types():
-    """Examples of running different types of batches."""
-    
-    print("🚀 QUICK BATCH TEST (2 configurations)")
-    quick_batch, quick_dir = run_batch_experiment(
-        batch_name="quick_test",
-        config_generator=create_custom_batch_from_list(QUICK_TEST_BATCH),
-        max_configs=2
-    )
-    
-    print("\n🚀 TARGETED BATCH (focused configurations)")
-    targeted_batch, targeted_dir = run_batch_experiment(
-        batch_name="targeted_analysis",
-        config_generator=create_targeted_batch_configs(),
-        max_configs=4
-    )
-    
-    print("\n🚀 HAMILTONIAN SWEEP BATCH")
-    hamiltonian_batch, hamiltonian_dir = run_batch_experiment(
-        batch_name="hamiltonian_sweep", 
-        config_generator=create_custom_batch_from_list(HAMILTONIAN_SWEEP_BATCH)
-    )
-    
-    return {
-        'quick': (quick_batch, quick_dir),
-        'targeted': (targeted_batch, targeted_dir),
-        'hamiltonian': (hamiltonian_batch, hamiltonian_dir)
-    }
-
-# Main execution
 if __name__ == "__main__":
-    # Run a quick batch to test
-    print("Starting batch quantum steering experiments...")
+    print("🎯 QUANTUM STEERING EXPERIMENT LAUNCHER")
+    print("="*80)
     
-    # Option 1: Run quick test batch
+    # =========================================================================
+    # OPTION 1: Run a single configuration (QUICKEST)
+    # =========================================================================
+    print("\n1️⃣  RUNNING SINGLE CONFIGURATION...")
+    single_results, single_config, single_dir = main_specific_test_sanitized()
+    
+    # =========================================================================
+    # OPTION 2: Run a quick batch (RECOMMENDED FOR TESTING)
+    # =========================================================================
+    print("\n2️⃣  RUNNING QUICK BATCH...")
     batch_results, batch_dir = run_batch_experiment(
         batch_name="quick_demo",
-        config_generator=create_custom_batch_from_list(QUICK_TEST_BATCH)
+        config_generator=create_custom_batch_from_list(QUICK_TEST_BATCH),
+        max_configs=2,
+        save_pickles=True
     )
     
-    # Option 2: Run full targeted batch (comment out quick test above)
-    # batch_results, batch_dir = run_batch_experiment(
-    #     batch_name="full_analysis",
-    #     config_generator=create_targeted_batch_configs()
-    # )
+    # =========================================================================
+    # OPTION 3: Run custom batch (UNCOMMENT AND MODIFY AS NEEDED)
+    # =========================================================================
+    """
+    print("\n3️⃣  RUNNING CUSTOM BATCH...")
+    CUSTOM_BATCH = [
+        {
+            'name': 'custom_H_06sz_04sx',
+            'hamiltonian': {'coefficients': {'z': 0.6, 'x': 0.4}},
+            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
+            'gamma_values': [0.0, 0.05, 0.1, 0.2],
+            'time': {'duration': 6.0, 'points': 500},
+        },
+        # Add more custom configurations here...
+    ]
     
-    # Option 3: Run specific number of configurations
-    # batch_results, batch_dir = run_batch_experiment(
-    #     batch_name="limited_run",
-    #     config_generator=create_targeted_batch_configs(),
-    #     max_configs=3
-    # )
+    custom_batch_results, custom_batch_dir = run_batch_experiment(
+        batch_name="custom_study",
+        config_generator=create_custom_batch_from_list(CUSTOM_BATCH),
+        save_pickles=True
+    )
+    """
     
-    print(f"\n🎉 Batch experiment completed!")
-    print(f"📁 All results saved in: {batch_dir}")
+    print(f"\n🎉 ALL EXPERIMENTS COMPLETED!")
+    print(f"📁 Single results: {single_dir}")
+    print(f"📁 Batch results: {batch_dir}")
 
 # %%
 
