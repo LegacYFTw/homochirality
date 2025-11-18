@@ -1,0 +1,28 @@
+{
+  "batch_timestamp": "2025-11-17T18:41:36.853065",
+  "total_configs": 2,
+  "successful_configs": 1,
+  "failed_configs": 1,
+  "config_summaries": {
+    "quick_H_05sz_05sx_ground": {
+      "status": "FAILED",
+      "error": "[Errno 2] No such file or directory: 'results/20251117_183507_quick_H_05sz_05sx_ground/results_summary.json'"
+    },
+    "quick_H_05sz_05sx_superposition": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.000000307286213,
+      "best_gamma": 0.5,
+      "results_dir": "results/20251117_183849_quick_H_05sz_05sx_superposition",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.1,
+        0.5
+      ]
+    }
+  }
+}

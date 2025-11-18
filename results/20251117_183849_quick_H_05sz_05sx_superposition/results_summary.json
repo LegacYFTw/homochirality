@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-11-17T18:41:24.972159",
+  "config_name": "quick_H_05sz_05sx_superposition",
+  "gamma_results": {
+    "0.0": {
+      "final_fidelity": 0.999999274083148,
+      "improvement": 0.2928924928966006,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.1": {
+      "final_fidelity": 0.9999999219247201,
+      "improvement": 0.29289314073817263,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.5": {
+      "final_fidelity": 1.000000307286213,
+      "improvement": 0.29289352609966546,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.001
+      }
+    }
+  }
+}

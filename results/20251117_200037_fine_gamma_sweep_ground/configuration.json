@@ -1,0 +1,69 @@
+{
+  "name": "fine_gamma_sweep_ground",
+  "description": "Quantum steering test - fine_gamma_sweep_ground",
+  "timestamp": "2025-11-17T20:00:37.433407",
+  "hamiltonian": {
+    "type": "sigma_combination",
+    "coefficients": {
+      "z": 0.5,
+      "x": 0.5
+    },
+    "matrix": "Quantum object: dims=[[2], [2]], shape=(2, 2), type='oper', dtype=CSR, isherm=True\nQobj data =\n[[ 0.5  0.5]\n [ 0.5 -0.5]]"
+  },
+  "initial_states": {
+    "type": "eigenbasis_superposition",
+    "basis": "ground",
+    "superposition": false
+  },
+  "target_state": {
+    "type": "excited_eigenstate",
+    "index": 1
+  },
+  "time": {
+    "duration": 100.0,
+    "points": 400
+  },
+  "algorithm": {
+    "impose_covariance": true,
+    "impose_passivity": true,
+    "eta": 0.01,
+    "verbose": false
+  },
+  "relaxation": {
+    "tp_tolerance": 1e-08,
+    "covariance_tolerance_range": [
+      0.0001,
+      0.00026826957952797245,
+      0.0007196856730011522,
+      0.0019306977288832496,
+      0.005179474679231213,
+      0.013894954943731374,
+      0.03727593720314938,
+      0.1
+    ],
+    "passivity_tolerance_range": [
+      0.0001,
+      0.00026826957952797245,
+      0.0007196856730011522,
+      0.0019306977288832496,
+      0.005179474679231213,
+      0.013894954943731374,
+      0.03727593720314938,
+      0.1
+    ],
+    "state_distance_tolerance": 0.05
+  },
+  "gamma_values": [
+    0.0,
+    0.001,
+    0.005,
+    0.01,
+    0.05,
+    0.1,
+    0.2,
+    0.5,
+    1.0,
+    2.0,
+    5.0
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "batch_timestamp": "2025-11-17T21:06:27.680565",
+  "total_configs": 11,
+  "successful_configs": 8,
+  "failed_configs": 3,
+  "config_summaries": {
+    "ground_state_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000008296045542,
+      "best_gamma": 5.0,
+      "results_dir": "results/20251117_185847_ground_state_gamma_sweep",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "superposition_state_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000039399400655,
+      "best_gamma": 0.1,
+      "results_dir": "results/20251117_191111_superposition_state_gamma_sweep",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "intermediate_30_70_gamma_sweep": {
+      "status": "FAILED",
+      "error": "Unsupported initial state type: custom_superposition"
+    },
+    "intermediate_50_50_gamma_sweep": {
+      "status": "FAILED",
+      "error": "Unsupported initial state type: custom_superposition"
+    },
+    "intermediate_70_30_gamma_sweep": {
+      "status": "FAILED",
+      "error": "Unsupported initial state type: custom_superposition"
+    },
+    "strong_Z_ground_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0002218348061442,
+      "best_gamma": 0.0,
+      "results_dir": "results/20251117_192018_strong_Z_ground_gamma_sweep",
+      "hamiltonian": {
+        "z": 2.0,
+        "x": 0.1
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "strong_X_ground_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0002889977066347,
+      "best_gamma": 0.1,
+      "results_dir": "results/20251117_193429_strong_X_ground_gamma_sweep",
+      "hamiltonian": {
+        "z": 0.1,
+        "x": 2.0
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "mixed_field_superposition_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000045748078021,
+      "best_gamma": 1.0,
+      "results_dir": "results/20251117_194924_mixed_field_superposition_gamma_sweep",
+      "hamiltonian": {
+        "z": 1.0,
+        "x": 1.0
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "fine_gamma_sweep_ground": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000008317149365,
+      "best_gamma": 5.0,
+      "results_dir": "results/20251117_200037_fine_gamma_sweep_ground",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.001,
+        0.005,
+        0.01,
+        0.05,
+        0.1,
+        0.2,
+        0.5,
+        1.0,
+        2.0,
+        5.0
+      ]
+    },
+    "tight_passivity_ground": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0010027473068899,
+      "best_gamma": 1.0,
+      "results_dir": "results/20251117_203004_tight_passivity_ground",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "tight_covariance_ground": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000008815075547,
+      "best_gamma": 5.0,
+      "results_dir": "results/20251117_205402_tight_covariance_ground",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    }
+  }
+}

@@ -650,7 +650,7 @@ def plot_gamma_dependence(gamma_results):
     ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.show()
+    # plt.show()
     
     return fig
 
@@ -1035,7 +1035,7 @@ def plot_specific_gamma_results(gamma_results, H, target_state):
     ax7.legend(bbox_to_anchor=(1.05, 0.5), loc='center left')
     
     plt.tight_layout()
-    plt.show()
+    # plt.show()
     
     # Print summary table
     print("\n" + "="*80)
@@ -1084,7 +1084,7 @@ def create_specific_test_config():
         
         # Time parameters
         'time': {
-            'duration': 8.0,
+            'duration': 100.0,
             'points': 1000,
         },
         
@@ -1172,7 +1172,7 @@ def create_specific_test_config(name="default"):
         
         # Time parameters
         'time': {
-            'duration': 8.0,
+            'duration': 100.0,
             'points': 1000,
         },
         
@@ -1567,7 +1567,7 @@ def plot_and_save_specific_gamma_results(gamma_results, H, target_state, config,
     main_figure_path = results_dir / f"comprehensive_results_{config_name}.png"
     plt.savefig(main_figure_path, dpi=300, bbox_inches='tight')
     print(f"💾 Main figure saved to: {main_figure_path}")
-    plt.show()
+    # plt.show()
 
 # =============================================================================
 # MAIN EXPERIMENT FUNCTION
@@ -1920,42 +1920,172 @@ if __name__ == "__main__":
     # =========================================================================
     # OPTION 1: Run a single configuration (QUICKEST)
     # =========================================================================
-    print("\n1️⃣  RUNNING SINGLE CONFIGURATION...")
-    single_results, single_config, single_dir = main_specific_test_sanitized()
+    # print("\n1️⃣  RUNNING SINGLE CONFIGURATION...")
+    # single_results, single_config, single_dir = main_specific_test_sanitized()
     
     # =========================================================================
     # OPTION 2: Run a quick batch (RECOMMENDED FOR TESTING)
     # =========================================================================
-    print("\n2️⃣  RUNNING QUICK BATCH...")
-    batch_results, batch_dir = run_batch_experiment(
-        batch_name="quick_demo",
-        config_generator=create_custom_batch_from_list(QUICK_TEST_BATCH),
-        max_configs=2,
-        save_pickles=True
-    )
+    # print("\n2️⃣  RUNNING QUICK BATCH...")
+    # batch_results, batch_dir = run_batch_experiment(
+    #     batch_name="quick_demo",
+    #     config_generator=create_custom_batch_from_list(QUICK_TEST_BATCH),
+    #     max_configs=2,
+    #     save_pickles=True
+    # )
     
     # =========================================================================
     # OPTION 3: Run custom batch (UNCOMMENT AND MODIFY AS NEEDED)
     # =========================================================================
-    """
     print("\n3️⃣  RUNNING CUSTOM BATCH...")
+
     CUSTOM_BATCH = [
-        {
-            'name': 'custom_H_06sz_04sx',
-            'hamiltonian': {'coefficients': {'z': 0.6, 'x': 0.4}},
-            'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False},
-            'gamma_values': [0.0, 0.05, 0.1, 0.2],
-            'time': {'duration': 6.0, 'points': 500},
-        },
+    # Ground state initializations
+    {
+        'name': 'ground_state_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),  # 1e-4 to 1e-1
+            'covariance_tolerance_range': np.logspace(-4, -1, 6), # 1e-4 to 1e-1
+        }
+    },
+    
+    # Superposition state initializations
+    {
+        'name': 'superposition_state_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': True, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    # Intermediate states (various superpositions)
+    {
+        'name': 'intermediate_30_70_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'custom_superposition', 'ground_weight': 0.7, 'excited_weight': 0.3},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    {
+        'name': 'intermediate_50_50_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'custom_superposition', 'ground_weight': 0.5, 'excited_weight': 0.5},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    {
+        'name': 'intermediate_70_30_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'custom_superposition', 'ground_weight': 0.3, 'excited_weight': 0.7},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    # Varying Hamiltonian strengths
+    {
+        'name': 'strong_Z_ground_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 2.0, 'x': 0.1}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    {
+        'name': 'strong_X_ground_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 0.1, 'x': 2.0}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    # Mixed field with different initial states
+    {
+        'name': 'mixed_field_superposition_gamma_sweep',
+        'hamiltonian': {'coefficients': {'z': 1.0, 'x': 1.0}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': True, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 6),
+            'covariance_tolerance_range': np.logspace(-4, -1, 6),
+        }
+    },
+    
+    # Fine-grained gamma sweep for critical region
+    {
+        'name': 'fine_gamma_sweep_ground',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-4, -1, 8),  # More granular
+            'covariance_tolerance_range': np.logspace(-4, -1, 8),
+        }
+    },
+    
+    # Asymmetric constraint tolerance studies
+    {
+        'name': 'tight_passivity_ground',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-5, -2, 6),  # Tighter passivity
+            'covariance_tolerance_range': np.logspace(-3, 0, 6),  # Looser covariance
+        }
+    },
+    
+    {
+        'name': 'tight_covariance_ground',
+        'hamiltonian': {'coefficients': {'z': 0.5, 'x': 0.5}},
+        'initial_states': {'type': 'eigenbasis_superposition', 'superposition': False, 'basis': 'ground'},
+        'gamma_values': [0.0, 0.01, 0.1, 0.5, 1.0, 5.0],
+        'time': {'duration': 100.0, 'points': 400},
+        'relaxation': {
+            'passivity_tolerance_range': np.logspace(-3, 0, 6),   # Looser passivity
+            'covariance_tolerance_range': np.logspace(-5, -2, 6), # Tighter covariance
+        }
+    },
+]
         # Add more custom configurations here...
-    ]
     
     custom_batch_results, custom_batch_dir = run_batch_experiment(
         batch_name="custom_study",
         config_generator=create_custom_batch_from_list(CUSTOM_BATCH),
         save_pickles=True
     )
-    """
     
     print(f"\n🎉 ALL EXPERIMENTS COMPLETED!")
     print(f"📁 Single results: {single_dir}")

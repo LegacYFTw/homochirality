@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-11-17T20:54:02.008737",
+  "config_name": "tight_passivity_ground",
+  "gamma_results": {
+    "0.0": {
+      "final_fidelity": 1.0001582524037422,
+      "improvement": 1.0001582524037422,
+      "best_params": {
+        "passivity_tolerance": 0.01,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.01": {
+      "final_fidelity": 1.0003040069334683,
+      "improvement": 1.0003040069334683,
+      "best_params": {
+        "passivity_tolerance": 0.01,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.1": {
+      "final_fidelity": 1.0006600107657788,
+      "improvement": 1.0006600107657788,
+      "best_params": {
+        "passivity_tolerance": 0.01,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.5": {
+      "final_fidelity": 1.0008052485370393,
+      "improvement": 1.0008052485370393,
+      "best_params": {
+        "passivity_tolerance": 0.01,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "1.0": {
+      "final_fidelity": 1.0010027473068899,
+      "improvement": 1.0010027473068899,
+      "best_params": {
+        "passivity_tolerance": 0.01,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "5.0": {
+      "final_fidelity": 0.9999999953446914,
+      "improvement": 0.9999999953446914,
+      "best_params": {
+        "passivity_tolerance": 0.01,
+        "covariance_tolerance": 1.0
+      }
+    }
+  }
+}

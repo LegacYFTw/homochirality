@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-11-17T20:00:36.526480",
+  "config_name": "mixed_field_superposition_gamma_sweep",
+  "gamma_results": {
+    "0.0": {
+      "final_fidelity": 1.000000132752661,
+      "improvement": 0.2928933515661136,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "0.01": {
+      "final_fidelity": 1.0000000799129631,
+      "improvement": 0.2928932987264157,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "0.1": {
+      "final_fidelity": 1.0000000013135066,
+      "improvement": 0.2928932201269592,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "0.5": {
+      "final_fidelity": 1.0000000075712547,
+      "improvement": 0.2928932263847073,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "1.0": {
+      "final_fidelity": 1.0000045748078021,
+      "improvement": 0.2928977936212547,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "5.0": {
+      "final_fidelity": 1.000000008926853,
+      "improvement": 0.2928932277403056,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    }
+  }
+}

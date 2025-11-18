@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-11-17T19:11:10.558873",
+  "config_name": "ground_state_gamma_sweep",
+  "gamma_results": {
+    "0.0": {
+      "final_fidelity": 1.0000001681216644,
+      "improvement": 1.0000001681216644,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "0.01": {
+      "final_fidelity": 1.0000001652194825,
+      "improvement": 1.0000001652194825,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "0.1": {
+      "final_fidelity": 1.0000001182048048,
+      "improvement": 1.0000001182048048,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "0.5": {
+      "final_fidelity": 0.9999998960287776,
+      "improvement": 0.9999998960287776,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "1.0": {
+      "final_fidelity": 1.0000000531442799,
+      "improvement": 1.0000000531442799,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    },
+    "5.0": {
+      "final_fidelity": 1.0000008296045542,
+      "improvement": 1.0000008296045542,
+      "best_params": {
+        "passivity_tolerance": 0.1,
+        "covariance_tolerance": 0.0001
+      }
+    }
+  }
+}

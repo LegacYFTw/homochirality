@@ -1,0 +1,60 @@
+{
+  "name": "tight_covariance_ground",
+  "description": "Quantum steering test - tight_covariance_ground",
+  "timestamp": "2025-11-17T20:54:02.943087",
+  "hamiltonian": {
+    "type": "sigma_combination",
+    "coefficients": {
+      "z": 0.5,
+      "x": 0.5
+    },
+    "matrix": "Quantum object: dims=[[2], [2]], shape=(2, 2), type='oper', dtype=CSR, isherm=True\nQobj data =\n[[ 0.5  0.5]\n [ 0.5 -0.5]]"
+  },
+  "initial_states": {
+    "type": "eigenbasis_superposition",
+    "basis": "ground",
+    "superposition": false
+  },
+  "target_state": {
+    "type": "excited_eigenstate",
+    "index": 1
+  },
+  "time": {
+    "duration": 100.0,
+    "points": 400
+  },
+  "algorithm": {
+    "impose_covariance": true,
+    "impose_passivity": true,
+    "eta": 0.01,
+    "verbose": false
+  },
+  "relaxation": {
+    "tp_tolerance": 1e-08,
+    "covariance_tolerance_range": [
+      1e-05,
+      3.9810717055349695e-05,
+      0.00015848931924611142,
+      0.000630957344480193,
+      0.0025118864315095794,
+      0.01
+    ],
+    "passivity_tolerance_range": [
+      0.001,
+      0.003981071705534973,
+      0.015848931924611134,
+      0.0630957344480193,
+      0.25118864315095796,
+      1.0
+    ],
+    "state_distance_tolerance": 0.05
+  },
+  "gamma_values": [
+    0.0,
+    0.01,
+    0.1,
+    0.5,
+    1.0,
+    5.0
+  ]
+}
