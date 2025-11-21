@@ -1,0 +1,12 @@
+{
+  "batch_timestamp": "2025-11-19T15:49:05.364843",
+  "total_configs": 1,
+  "successful_configs": 0,
+  "failed_configs": 1,
+  "config_summaries": {
+    "ground_state_full_grid": {
+      "status": "FAILED",
+      "error": "'final_fidelity'"
+    }
+  }
+}

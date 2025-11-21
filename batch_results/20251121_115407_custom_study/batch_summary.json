@@ -1,0 +1,46 @@
+{
+  "batch_timestamp": "2025-11-21T12:11:17.913509",
+  "total_configs": 2,
+  "successful_configs": 2,
+  "failed_configs": 0,
+  "config_summaries": {
+    "ground_state_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000008296045548,
+      "best_gamma": 5.0,
+      "results_dir": "results/20251121_115407_ground_state_gamma_sweep",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    },
+    "ground_state_gamma_sweep_no_constraints": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.0000011850195747,
+      "best_gamma": 1.0,
+      "results_dir": "results/20251121_120818_ground_state_gamma_sweep_no_constraints",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    }
+  }
+}
