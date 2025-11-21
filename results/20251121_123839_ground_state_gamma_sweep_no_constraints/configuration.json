@@ -1,0 +1,54 @@
+{
+  "name": "ground_state_gamma_sweep_no_constraints",
+  "description": "Quantum steering test - ground_state_gamma_sweep_no_constraints",
+  "timestamp": "2025-11-21T12:38:39.926519",
+  "hamiltonian": {
+    "type": "sigma_combination",
+    "coefficients": {
+      "z": 2.0,
+      "x": 0.1
+    },
+    "matrix": "Quantum object: dims=[[2], [2]], shape=(2, 2), type='oper', dtype=CSR, isherm=True\nQobj data =\n[[ 2.   0.1]\n [ 0.1 -2. ]]"
+  },
+  "initial_states": {
+    "type": "eigenbasis_superposition",
+    "basis": "ground",
+    "superposition": false
+  },
+  "target_state": {
+    "type": "excited_eigenstate",
+    "index": 1
+  },
+  "time": {
+    "duration": 100.0,
+    "points": 400
+  },
+  "algorithm": {
+    "impose_covariance": false,
+    "impose_passivity": false,
+    "eta": 0.01,
+    "verbose": false
+  },
+  "relaxation": {
+    "tp_tolerance": 1e-08,
+    "covariance_tolerance_range": [
+      0.001,
+      0.01,
+      0.1
+    ],
+    "passivity_tolerance_range": [
+      0.001,
+      0.01,
+      0.1
+    ],
+    "state_distance_tolerance": 0.05
+  },
+  "gamma_values": [
+    0.0,
+    0.01,
+    0.1,
+    0.5,
+    1.0,
+    5.0
+  ]
+}
