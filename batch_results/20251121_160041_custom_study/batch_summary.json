@@ -1,0 +1,27 @@
+{
+  "batch_timestamp": "2025-11-21T16:12:05.021762",
+  "total_configs": 1,
+  "successful_configs": 1,
+  "failed_configs": 0,
+  "config_summaries": {
+    "superposition_state_gamma_sweep": {
+      "status": "SUCCESS",
+      "best_fidelity": 1.00000118518561,
+      "best_gamma": 1.0,
+      "results_dir": "results/20251121_161046_superposition_state_gamma_sweep",
+      "hamiltonian": {
+        "z": 0.5,
+        "x": 0.5
+      },
+      "initial_state": "eigenbasis_superposition",
+      "gamma_values": [
+        0.0,
+        0.01,
+        0.1,
+        0.5,
+        1.0,
+        5.0
+      ]
+    }
+  }
+}

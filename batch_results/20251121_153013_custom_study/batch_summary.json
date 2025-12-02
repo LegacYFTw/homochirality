@@ -1,0 +1,16 @@
+{
+  "batch_timestamp": "2025-11-21T15:30:13.982158",
+  "total_configs": 2,
+  "successful_configs": 0,
+  "failed_configs": 2,
+  "config_summaries": {
+    "ground_state_gamma_sweep": {
+      "status": "FAILED",
+      "error": "Unsupported initial state type: custom_superposition"
+    },
+    "ground_state_gamma_sweep_no_constraints": {
+      "status": "FAILED",
+      "error": "Unsupported initial state type: custom_superposition"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-11-21T16:12:04.080408",
+  "config_name": "superposition_state_gamma_sweep",
+  "gamma_results": {
+    "0.0": {
+      "final_fidelity": 0.9999999446510153,
+      "improvement": 0.2928931591005942,
+      "best_params": {
+        "passivity_tolerance": 0.001,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.01": {
+      "final_fidelity": 0.9999999790366416,
+      "improvement": 0.29289319348622056,
+      "best_params": {
+        "passivity_tolerance": 0.001,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.1": {
+      "final_fidelity": 1.00000019873457,
+      "improvement": 0.29289341318414885,
+      "best_params": {
+        "passivity_tolerance": 0.001,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "0.5": {
+      "final_fidelity": 1.000000060566301,
+      "improvement": 0.29289327501588003,
+      "best_params": {
+        "passivity_tolerance": 0.001,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "1.0": {
+      "final_fidelity": 1.00000118518561,
+      "improvement": 0.29289439963518904,
+      "best_params": {
+        "passivity_tolerance": 0.001,
+        "covariance_tolerance": 0.001
+      }
+    },
+    "5.0": {
+      "final_fidelity": 1.0000002493926459,
+      "improvement": 0.2928934638422248,
+      "best_params": {
+        "passivity_tolerance": 0.001,
+        "covariance_tolerance": 0.001
+      }
+    }
+  }
+}
